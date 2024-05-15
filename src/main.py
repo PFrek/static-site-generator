@@ -64,10 +64,25 @@ def generate_page(from_path, template_path, dest_path):
         f.write(page)
 
 
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    dir_contents = os.listdir(dir_path_content)
+
+    for entry in dir_contents:
+        entry_path = os.path.join(dir_path_content, entry)
+        dest_path = os.path.join(dest_dir_path, entry)
+
+        if os.path.isfile(entry_path):
+            if entry[-3:] == ".md":
+                generate_page(entry_path, template_path, dest_path[:-3] + ".html")
+
+        else:
+            generate_pages_recursive(entry_path, template_path, dest_path)
+
+
 def main():
     copy_dir_contents("static/", "public/")
 
-    generate_page("content/index.md", "template.html", "public/index.html")
+    generate_pages_recursive("content/", "template.html", "public/")
 
 
 main()
