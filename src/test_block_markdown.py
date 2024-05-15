@@ -12,6 +12,7 @@ from block_markdown import (
     heading_to_html,
     unordered_to_html,
     ordered_to_html,
+    markdown_to_html_node,
 )
 
 from htmlnode import ParentNode, LeafNode
@@ -219,7 +220,7 @@ This is the same paragraph on a new line
 
         for block in paragraphs:
             html = paragraph_to_html(block)
-            self.assertEqual(html, LeafNode("p", block))
+            self.assertEqual(html, ParentNode("p", [LeafNode(None, block)]))
 
         for block in not_paragraphs:
             with self.assertRaises(ValueError):
@@ -238,10 +239,27 @@ This is the same paragraph on a new line
             "1. List\n2. Not\n3. Quote",
         ]
 
-        for block in quotes:
-            html = quote_to_html(block)
-            contents = get_quote_contents(block)
-            self.assertEqual(html, LeafNode("blockquote", contents))
+        # block = quotes[0]
+        # html = quote_to_html(block)
+        # print(html)
+        # self.assertEqual(
+        #     html, ParentNode("blockquote", [LeafNode(None, "Single line quote")])
+        # )
+
+        block = quotes[1]
+        html = quote_to_html(block)
+        self.assertEqual(
+            html,
+            ParentNode(
+                "blockquote",
+                [
+                    LeafNode(None, "Multiline"),
+                    LeafNode(None, "quotes"),
+                    LeafNode(None, "also"),
+                    LeafNode(None, "work"),
+                ],
+            ),
+        )
 
         for block in not_quotes:
             with self.assertRaises(ValueError):
@@ -262,9 +280,7 @@ This is the same paragraph on a new line
             html = code_to_html(block)
             contents = get_code_contents(block)
 
-            self.assertEqual(
-                html, ParentNode("pre", None, [LeafNode("code", contents)])
-            )
+            self.assertEqual(html, ParentNode("pre", [LeafNode("code", contents)]))
 
         for block in not_codes:
             with self.assertRaises(ValueError):
@@ -288,7 +304,7 @@ This is the same paragraph on a new line
 
             contents = get_heading_contents(block)
 
-            self.assertEqual(html, LeafNode(f"h{i+1}", contents))
+            self.assertEqual(html, ParentNode(f"h{i+1}", [LeafNode(None, contents)]))
 
         for block in not_headings:
             with self.assertRaises(ValueError):
@@ -304,31 +320,37 @@ This is the same paragraph on a new line
 
         htmls = list(map(unordered_to_html, lists))
 
-        self.assertEqual(htmls[0], ParentNode("ul", [LeafNode("li", "Single item")]))
+        self.assertEqual(
+            htmls[0],
+            ParentNode("ul", [ParentNode("li", [LeafNode(None, "Single item")])]),
+        )
 
         self.assertEqual(
             htmls[1],
             ParentNode(
                 "ul",
                 [
-                    LeafNode("li", "more"),
-                    LeafNode("li", "than"),
-                    LeafNode("li", "one"),
-                    LeafNode("li", "item"),
+                    ParentNode("li", [LeafNode(None, "more")]),
+                    ParentNode("li", [LeafNode(None, "than")]),
+                    ParentNode("li", [LeafNode(None, "one")]),
+                    ParentNode("li", [LeafNode(None, "item")]),
                 ],
             ),
         )
 
-        self.assertEqual(htmls[2], ParentNode("ul", [LeafNode("li", "single dash")]))
+        self.assertEqual(
+            htmls[2],
+            ParentNode("ul", [ParentNode("li", [LeafNode(None, "single dash")])]),
+        )
 
         self.assertEqual(
             htmls[3],
             ParentNode(
                 "ul",
                 [
-                    LeafNode("li", "many"),
-                    LeafNode("li", "dashes"),
-                    LeafNode("li", "here"),
+                    ParentNode("li", [LeafNode(None, "many")]),
+                    ParentNode("li", [LeafNode(None, "dashes")]),
+                    ParentNode("li", [LeafNode(None, "here")]),
                 ],
             ),
         )
@@ -341,17 +363,87 @@ This is the same paragraph on a new line
 
         htmls = list(map(ordered_to_html, lists))
 
-        self.assertEqual(htmls[0], ParentNode("ol", [LeafNode("li", "Single item")]))
+        self.assertEqual(
+            htmls[0],
+            ParentNode("ol", [ParentNode("li", [LeafNode(None, "Single item")])]),
+        )
 
         self.assertEqual(
             htmls[1],
             ParentNode(
                 "ol",
                 [
-                    LeafNode("li", "more"),
-                    LeafNode("li", "than"),
-                    LeafNode("li", "one"),
-                    LeafNode("li", "item"),
+                    ParentNode("li", [LeafNode(None, "more")]),
+                    ParentNode("li", [LeafNode(None, "than")]),
+                    ParentNode("li", [LeafNode(None, "one")]),
+                    ParentNode("li", [LeafNode(None, "item")]),
+                ],
+            ),
+        )
+
+    def test_markdown_to_html_node(self):
+        markdown = """# This is the title
+
+This is a regular paragraph.
+It spans two lines.
+
+* Now an unordered list
+* With more than one item
+* for good measure
+
+```
+// Very good code
+int i = 0
+i += 1
+return i
+```
+
+1. Read this markdown
+2. Good"""
+
+        html = markdown_to_html_node(markdown)
+
+        self.assertEqual(
+            html,
+            ParentNode(
+                "div",
+                [
+                    ParentNode("h1", [LeafNode(None, "This is the title")]),
+                    ParentNode(
+                        "p",
+                        [
+                            LeafNode(
+                                None,
+                                "This is a regular paragraph.\nIt spans two lines.",
+                            )
+                        ],
+                    ),
+                    ParentNode(
+                        "ul",
+                        [
+                            ParentNode("li", [LeafNode(None, "Now an unordered list")]),
+                            ParentNode(
+                                "li", [LeafNode(None, "With more than one item")]
+                            ),
+                            ParentNode("li", [LeafNode(None, "for good measure")]),
+                        ],
+                    ),
+                    ParentNode(
+                        "pre",
+                        [
+                            LeafNode(
+                                "code",
+                                "// Very good code\nint i = 0\ni += 1\nreturn i",
+                            ),
+                        ],
+                    ),
+                    ParentNode(
+                        "ol",
+                        [
+                            ParentNode("li", [LeafNode(None, "Read this markdown")]),
+                            ParentNode("li", [LeafNode(None, "Good")]),
+                        ],
+                    ),
                 ],
             ),
         )

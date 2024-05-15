@@ -26,8 +26,20 @@ class TextNode:
         return f"TextNode({self.text}, {self.text_type}, {self.url})"
 
 
+def text_to_textnodes(text):
+    nodes = [TextNode(text, TextNode.type_text)]
+
+    nodes = split_nodes_image(nodes)
+    nodes = split_nodes_link(nodes)
+    nodes = split_nodes_delimiter(nodes, "**", TextNode.type_bold)
+    nodes = split_nodes_delimiter(nodes, "*", TextNode.type_italic)
+    nodes = split_nodes_delimiter(nodes, "`", TextNode.type_code)
+
+    return nodes
+
+
 def text_node_to_html_node(text_node):
-    if text_node.text_type == TextNode.text_type_text:
+    if text_node.text_type == TextNode.type_text:
         return LeafNode(None, text_node.text)
 
     if text_node.text_type == TextNode.type_bold:
@@ -148,15 +160,3 @@ def extract_markdown_links(text):
     regex = r"\[(.*?)\]\((.*?)\)"
     matches = re.findall(regex, text)
     return matches
-
-
-def text_to_textnodes(text):
-    nodes = [TextNode(text, TextNode.type_text)]
-
-    nodes = split_nodes_image(nodes)
-    nodes = split_nodes_link(nodes)
-    nodes = split_nodes_delimiter(nodes, "**", TextNode.type_bold)
-    nodes = split_nodes_delimiter(nodes, "*", TextNode.type_italic)
-    nodes = split_nodes_delimiter(nodes, "`", TextNode.type_code)
-
-    return nodes
